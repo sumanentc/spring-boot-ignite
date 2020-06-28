@@ -1,39 +1,36 @@
 package com.cache.config;
 
+import com.cache.entity.Person;
+import org.apache.ignite.Ignite;
+import org.apache.ignite.Ignition;
 import org.apache.ignite.cache.CacheAtomicityMode;
 import org.apache.ignite.cache.CacheMode;
-import org.apache.ignite.cache.spring.SpringCacheManager;
 import org.apache.ignite.configuration.CacheConfiguration;
 import org.apache.ignite.configuration.IgniteConfiguration;
 import org.apache.ignite.spi.communication.tcp.TcpCommunicationSpi;
 import org.apache.ignite.spi.discovery.tcp.TcpDiscoverySpi;
 import org.apache.ignite.spi.discovery.tcp.ipfinder.multicast.TcpDiscoveryMulticastIpFinder;
-import org.springframework.cache.CacheManager;
-import org.springframework.cache.annotation.EnableCaching;
+import org.apache.ignite.springdata22.repository.config.EnableIgniteRepositories;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.validation.annotation.Validated;
 
-import javax.cache.Caching;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 @Configuration
-@EnableCaching
+@EnableIgniteRepositories(value = "com.cache.*")
 public class IgniteCacheConfiguration {
 
     @Bean
-    public CacheManager cacheManager() {
-        SpringCacheManager cacheManager = new SpringCacheManager();
-        cacheManager.setConfiguration(igniteConfiguration());
-        return cacheManager;
+    public Ignite igniteInstance() {
+        return Ignition.start(igniteConfiguration());
     }
 
     @Bean(name = "igniteConfiguration")
     public IgniteConfiguration igniteConfiguration() {
         IgniteConfiguration igniteConfiguration = new IgniteConfiguration();
-        igniteConfiguration.setGridName("testGrid");
+        igniteConfiguration.setIgniteInstanceName("testIgniteInstance");
         //igniteConfiguration.setClientMode(true);
         igniteConfiguration.setPeerClassLoadingEnabled(true);
         igniteConfiguration.setLocalHost("127.0.0.1");
@@ -68,22 +65,21 @@ public class IgniteCacheConfiguration {
             cacheConfiguration.setAtomicityMode(CacheAtomicityMode.ATOMIC);
             cacheConfiguration.setCacheMode(CacheMode.REPLICATED);
             cacheConfiguration.setName("employee");
-            cacheConfiguration.setWriteThrough(false);
-            cacheConfiguration.setReadThrough(false);
-            cacheConfiguration.setWriteBehindEnabled(false);
-            cacheConfiguration.setBackups(1);
             cacheConfiguration.setStatisticsEnabled(true);
 
             CacheConfiguration cacheConfiguration1 = new CacheConfiguration();
             cacheConfiguration1.setAtomicityMode(CacheAtomicityMode.ATOMIC);
             cacheConfiguration1.setCacheMode(CacheMode.REPLICATED);
             cacheConfiguration1.setName("student");
-            cacheConfiguration1.setWriteThrough(false);
-            cacheConfiguration1.setReadThrough(false);
-            cacheConfiguration1.setWriteBehindEnabled(false);
-            cacheConfiguration1.setBackups(1);
             cacheConfiguration1.setStatisticsEnabled(true);
 
+            // Defining and creating a new cache to be used by Ignite Spring Data
+            // repository.
+            CacheConfiguration ccfg = new CacheConfiguration("PersonCache");
+            // Setting SQL schema for the cache.
+            ccfg.setIndexedTypes(Long.class, Person.class);
+
+            cacheConfigurations.add(ccfg);
             cacheConfigurations.add(cacheConfiguration);
             cacheConfigurations.add(cacheConfiguration1);
 
