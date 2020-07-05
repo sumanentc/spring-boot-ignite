@@ -4,6 +4,9 @@ import com.cache.entity.Person;
 import com.cache.exception.ResourceNotFoundException;
 import com.cache.repository.PersonRepository;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.ignite.Ignite;
+import org.apache.ignite.IgniteDataStreamer;
+import org.apache.ignite.lang.IgniteFuture;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -17,6 +20,9 @@ public class PersonService {
     @Autowired
     private PersonRepository personRepository;
 
+    @Autowired
+    private Ignite igniteInstance;
+
     public Person addPerson(Person person){
         long id = new Random().nextLong();
         //We cannot use the Spring Crud repository
@@ -25,15 +31,15 @@ public class PersonService {
 
     public Person updatePerson(Person person,long personId){
         return personRepository.findById(personId)
-        .map(existingPerson ->{
-            existingPerson.setLastName(person.getLastName());
-            existingPerson.setFirstName(person.getFirstName());
-            existingPerson.setAge(person.getAge());
-            return personRepository.save(personId,existingPerson);
-        }).orElseGet(()->{
-            long id = new Random().nextLong();
-            return personRepository.save(id,person);
-        });
+                .map(existingPerson ->{
+                    existingPerson.setLastName(person.getLastName());
+                    existingPerson.setFirstName(person.getFirstName());
+                    existingPerson.setAge(person.getAge());
+                    return personRepository.save(personId,existingPerson);
+                }).orElseGet(()->{
+                    long id = new Random().nextLong();
+                    return personRepository.save(id,person);
+                });
     }
 
     public Person getPerson(long id){
@@ -41,7 +47,7 @@ public class PersonService {
     }
 
     public void deletePerson(Long id){
-     personRepository.deleteById(id);
+        personRepository.deleteById(id);
     }
 
     public List<Person> getPersons(String firstName, Integer age){
@@ -72,8 +78,31 @@ public class PersonService {
         persons.put(6L, new Person(6L,"Denis", "Won", 22));
         persons.put(7L, new Person(7L,"Abdula", "Adis",40));
         persons.put(8L, new Person(8L,  "Roman", "Ive", 27));
-        // Adding data into the repository.
-        personRepository.save(persons);
+        /**
+         * Using IgniteDataStreamer to populate the Cache. IgniteDataStreamer should be used for bulk operation
+         */
+        // Create a streamer to stream words into the cache.
+        //https://www.javadoc.io/doc/org.apache.ignite/ignite-core/2.5.0/org/apache/ignite/IgniteDataStreamer.html
+        try (IgniteDataStreamer<Long, Person> stmr = igniteInstance.dataStreamer("PersonCache")) {
+            // Allow data updates.
+            stmr.allowOverwrite(true);
+            /*
+            // Configure data transformation to count random numbers added to the stream.
+            stmr.receiver(StreamTransformer.from((e, arg) -> {
+                // Get current count.
+                Person person = e.getValue();
+                log.info("Existing Value ::: " + person);
+
+                log.info("Key Present in Cache " + e.getKey());
+
+                return null;
+            }));
+            */
+            IgniteFuture<?> future =  stmr.addData(persons);
+            stmr.flush();
+            future.get();
+
+        }
         log.info("\n>>> Added " + personRepository.count() + " Persons into the repository.");
     }
 }
