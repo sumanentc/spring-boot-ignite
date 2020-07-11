@@ -1,5 +1,6 @@
 package com.cache.config;
 
+import com.cache.entity.Organization;
 import com.cache.entity.Person;
 import org.apache.ignite.Ignite;
 import org.apache.ignite.Ignition;
@@ -75,11 +76,16 @@ public class IgniteCacheConfiguration {
 
             // Defining and creating a new cache to be used by Ignite Spring Data
             // repository.
-            CacheConfiguration ccfg = new CacheConfiguration("PersonCache");
+            CacheConfiguration<Long,Person> ccfg = new CacheConfiguration("PersonCache");
             // Setting SQL schema for the cache.
             ccfg.setIndexedTypes(Long.class, Person.class);
 
+            CacheConfiguration<Long, Organization> orgCacheCfg = new CacheConfiguration<>("ORG_CACHE");
+            orgCacheCfg.setCacheMode(CacheMode.REPLICATED); // Default.
+            orgCacheCfg.setIndexedTypes(Long.class, Organization.class);
+
             cacheConfigurations.add(ccfg);
+            cacheConfigurations.add(orgCacheCfg);
             cacheConfigurations.add(cacheConfiguration);
             cacheConfigurations.add(cacheConfiguration1);
 

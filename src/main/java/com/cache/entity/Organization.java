@@ -6,26 +6,25 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.apache.ignite.cache.query.annotations.QuerySqlField;
 
-import java.io.Serializable;
+import java.sql.Timestamp;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class Person  implements Serializable {
+public class Organization {
 
-    private static final long serialVersionUID = 3235823406453902677L;
-
-    @QuerySqlField(index = true)
-    private Long id;
-    @QuerySqlField
-    private String firstName;
-    @QuerySqlField
-    private String lastName;
-    @QuerySqlField
-    private int age;
     /** Organization ID (indexed). */
     @QuerySqlField(index = true)
-    public Long orgId;
+    private Long id;
 
+    /** Organization name (indexed). */
+    @QuerySqlField(index = true)
+    private String name;
+
+    /** Type. */
+    private OrganizationType type;
+
+    /** Last update time. */
+    private Timestamp lastUpdated;
 }

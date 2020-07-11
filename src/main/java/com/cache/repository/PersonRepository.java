@@ -26,5 +26,9 @@ public interface PersonRepository extends IgniteRepository<Person, Long> {
     @Query("SELECT p.* FROM Person p WHERE age > ?")
     List<Person> selectPersonsByAge(int age);
 
+    // SQL clause query which joins on 2 types to select people for a specific organization.
+    @Query(" select pers.* from Person as pers, ORG_CACHE.Organization as org where pers.orgId = org.id and lower(org.name) = lower(?)")
+    List<?> selectPersonByOrganization(String organizationName);
+
 
 }

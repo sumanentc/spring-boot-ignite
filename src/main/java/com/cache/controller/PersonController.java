@@ -6,7 +6,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/person")
@@ -38,6 +37,12 @@ public class PersonController {
     @ResponseBody
     public List<Person> findPersons(@RequestParam(required = false) String firstName, @RequestParam(required = false) Integer age){
             return personService.getPersons(firstName,age);
+    }
+
+    @GetMapping("/organization/{organizationName}")
+    @ResponseBody
+    public List<Person> findPersons(@PathVariable String organizationName){
+        return personService.getPersonsByOrganization(organizationName);
     }
 
 
